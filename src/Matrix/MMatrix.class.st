@@ -131,19 +131,21 @@ MMatrix >> initializeRows: numRows columns: numColumns [
 MMatrix >> multiply: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m2_nb_rows with: m2_nb_columns in: res [
 "// This function multiplies mat1[][] and mat2[][], 
 // and stores the result in res[][] 
-void multiply(float *m1, int m1_nb_rows, int m1_nb_columns, 
-              float *m2, int m2_nb_rows, int m2_nb_columns, 
-              float *res) 
+
+
+void multiply(double *m1, int m1_nb_rows, int m1_nb_columns, 
+              double *m2, int m2_nb_rows, int m2_nb_columns, 
+              double *res) 
 { 
-    int i, j, k; 
-    for (i = 0; i < m2_nb_columns; i++) 
+    int col, row, k; 
+    for (col = 0; col < m2_nb_columns; col++) 
     { 
-        for (j = 0; j < m1_nb_rows; j++) 
+        for (row = 0; row < m1_nb_rows; row++) 
         { 
-            res[i * m2_nb_columns + j] = 0; 
+				double tmp = 0;
             for (k = 0; k < m2_nb_rows; k++) 
-                res[i * m2_nb_columns + j] += 
-                    m1[i * m1_nb_columns + k] * m2[k * m2_nb_columns + j]; 
+					tmp += m1[row * m1_nb_columns + k] * m2[k * m2_nb_columns + col];
+				res[row * m2_nb_columns + col] = tmp;
         } 
     } 
 } 
@@ -174,9 +176,9 @@ MMatrix >> multiplyWith: anotherMatrix [
 	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
 	
 	"COMPUTATION WITHIN PHARO"
-	resultArray := FloatArray new: (nbRows * anotherMatrix nbColumns).
+	"resultArray := FloatArray new: (nbRows * anotherMatrix nbColumns)."
 	"-----"
-	
+	"
 	self 
 		pharoMultiply: self array asFloatArray 
 		with: nbRows 
@@ -194,19 +196,19 @@ MMatrix >> multiplyWith: anotherMatrix [
 		with: anotherMatrix nbRows 
 		with: anotherMatrix nbColumns 
 		in: resultArray.
-	"
+	
 	
 	"COMPUTATION WITHIN PHARO"
-	result := MMatrix 
+	"result := MMatrix 
 		newRows: nbRows 
 		columns: anotherMatrix nbColumns.
-	result fromContents: resultArray.
+	result fromContents: resultArray."
 	"-----"
-	"result := MMatrix 
+	result := MMatrix 
 		newHandle: resultArray 
 		rows: nbRows 
 		columns: anotherMatrix nbColumns.
-	"
+	
 	^ result
 ]
 
