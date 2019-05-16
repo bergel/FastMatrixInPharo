@@ -173,6 +173,19 @@ MMatrix >> multiplyWith: anotherMatrix [
 	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
 	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
 	
+	"COMPUTATION WITHIN PHARO"
+	resultArray := FloatArray new: (nbRows * anotherMatrix nbColumns).
+	"-----"
+	
+	self 
+		pharoMultiply: self array asFloatArray 
+		with: nbRows 
+		with: nbColumns 
+		with: anotherMatrix array asFloatArray
+		with: anotherMatrix nbRows 
+		with: anotherMatrix nbColumns 
+		in: resultArray.
+	"
 	self 
 		multiply: self array getHandle 
 		with: nbRows 
@@ -181,12 +194,19 @@ MMatrix >> multiplyWith: anotherMatrix [
 		with: anotherMatrix nbRows 
 		with: anotherMatrix nbColumns 
 		in: resultArray.
+	"
 	
+	"COMPUTATION WITHIN PHARO"
 	result := MMatrix 
+		newRows: nbRows 
+		columns: anotherMatrix nbColumns.
+	result fromContents: resultArray.
+	"-----"
+	"result := MMatrix 
 		newHandle: resultArray 
 		rows: nbRows 
 		columns: anotherMatrix nbColumns.
-	
+	"
 	^ result
 ]
 
@@ -225,6 +245,24 @@ MMatrix >> newArrayFromHandle: aHandle [
 		fromHandle: aHandle 
 		type: 'double' 
 		size: nbColumns * nbRows
+]
+
+{ #category : #private }
+MMatrix >> pharoMultiply: m1 with: m1_nb_rows with: m1_nb_columns with: m2 with: m2_nb_rows with: m2_nb_columns in: res [
+	0 to: (m2_nb_columns - 1) do: [ :col |
+		0 to: (m1_nb_rows - 1) do: [ :row |
+			| tmp |
+			tmp := 0.
+			0 to: m2_nb_rows - 1 do: [ :k |
+				"Transcript show: i asString, ' ', j asString, ' ', k asString; cr."
+				"self halt."
+				"res[row][col] += m1[row][k] * m2[k][col]"
+				tmp := tmp + ((m1 at: (row * m1_nb_columns + k) + 1) * (m2 at: (k * m2_nb_columns + col) + 1))
+			].
+			res at: (row * m2_nb_columns + col) + 1 put: tmp
+		] 
+	].
+	
 ]
 
 { #category : #printing }
