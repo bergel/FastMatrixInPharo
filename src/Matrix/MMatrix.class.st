@@ -45,15 +45,16 @@ MMatrix >> +* anotherMatrix [
 
 { #category : #'as yet unclassified' }
 MMatrix >> - anotherMatrix [
-	"Should be done in C!!!!"
-	| result |
+	"PHARO VERSION"
+	"| result |
 	result := MMatrix newRows: nbRows columns: nbColumns.
 	1 to: nbRows do: [ :y |
 		1 to: nbColumns do: [ :x |
 			result at: x @ y put: ((self at: x @ y) - (anotherMatrix at: x @ y))
 		] 
 	].
-	^ result
+	^ result"
+	^ self substracte: anotherMatrix
 ]
 
 { #category : #accessing }
@@ -289,6 +290,22 @@ void multiply(double *m1, int m1_nb_rows, int m1_nb_columns,
         } 
     } 
 } 
+
+void substracte(double *m1, int nb_rows, int nb_columns, 
+              	double *m2, 
+              	double *res)
+{
+   int col, row; 
+    for (col = 0; col < nb_columns; col++) 
+    { 
+        for (row = 0; row < nb_rows; row++) 
+        { 
+			res[row * nb_columns + col] = 
+				m1[row * nb_columns + col] - m2[row * nb_columns + col];
+        } 
+    } 
+
+}
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
@@ -299,6 +316,44 @@ gcc -dynamiclib -o matrix.dylib mat.c
 
 This will create a file called matrix.dylib
 "
+]
+
+{ #category : #'as yet unclassified' }
+MMatrix >> substracte: anotherMatrix [
+	| result resultArray |
+	nbColumns = anotherMatrix nbColumns ifFalse: [self error: 'dimensions do not conform'].
+	nbRows = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
+	
+	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
+	
+	self assert: [ nbRows * nbColumns = array size ].
+	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
+	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
+	
+	self 
+		substracte: self array getHandle 
+		with: nbRows 
+		with: nbColumns 
+		with: anotherMatrix array getHandle
+		in: resultArray.
+	
+	result := MMatrix 
+		newHandle: resultArray 
+		rows: nbRows 
+		columns: nbColumns.
+	
+	^ result
+]
+
+{ #category : #private }
+MMatrix >> substracte: m1 with: nb_rows with: nb_columns with: m2 in: res [
+
+	^ self 
+		ffiCall: #(void substracte(double *m1, int nb_rows, int nb_columns, 
+              	double *m2, 
+              	double *res)) 
+		module: '/tmp/matrix.dylib'
+
 ]
 
 { #category : #enumerating }

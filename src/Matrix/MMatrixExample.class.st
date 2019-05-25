@@ -10,6 +10,7 @@ MMatrixExample >> benchmark [
 [ self new benchmark ] timeToRun 
 
 0:00:00:07.933  => Only the multiplication in C
+0:00:00:06.058  => With substraction and multiplication in C
 
 
 "
