@@ -5,6 +5,67 @@ Class {
 }
 
 { #category : #examples }
+MMatrixExample >> benchmark [
+"
+[ self new benchmark ] timeToRun 
+
+0:00:00:07.933  => Only the multiplication in C
+
+
+"
+
+
+| n din h dout r x y w1 w2 learningRate losses hh hrelu ypred loss gradYPred gradW2 gradHRelu gradH gradW1 |
+n := 64.
+din := 100.
+h := 20.
+dout := 5.
+
+r := Random seed: 42.
+"x := Array2D rows: n columns: din tabulate: [ :i :j | r next * 4 -2 ].
+y := Array2D rows: n columns: dout tabulate: [ :i :j | r next * 4 -2 ].
+
+w1 := Array2D rows: din columns: h tabulate: [ :i :j | r next * 4 -2 ].
+w2 := Array2D rows: h columns: dout tabulate: [ :i :j | r next * 4 -2 ].
+"
+
+x := MMatrix newRows: n columns: din.
+x fromContents: ((1 to: n * din) collect: [ :i | r next ]).
+y := MMatrix newRows: n columns: dout.
+y fromContents: ((1 to: n * dout) collect: [ :i | r next ]).
+
+w1 := MMatrix newRows: din columns: h.
+w1 fromContents: ((1 to: din * h) collect: [ :i | r next ]).
+w2 := MMatrix newRows: h columns: dout.
+w2 fromContents: ((1 to: h * dout) collect: [ :i | r next ]).
+
+learningRate := 1e-6.
+
+losses := OrderedCollection new.
+
+1500 timesRepeat: [ 
+	hh := x +* w1.
+	hrelu := hh collect: [ :v | v max: 0 ].
+	ypred := hrelu +* w2.
+	
+	"Compute and print loss"
+	loss := ((ypred - y) collect: [:vv | vv * vv ]) sum.
+	losses add: loss.
+	
+	"Backprop to compute gradients of w2 and w2 with respect to loss"
+	gradYPred := (ypred - y) * 2.0.
+	gradW2 := hrelu transposed +* gradYPred.
+	gradHRelu := gradYPred +* w2 transposed.
+	gradH := gradHRelu collect: [ :v | v max: 0 ].
+	gradW1 := x transposed +* gradH.
+	
+	w1 := w1 - (gradW1 * learningRate).
+	w2 := w2 - (gradW2 * learningRate) 
+].
+
+]
+
+{ #category : #examples }
 MMatrixExample >> example01 [
 
 "

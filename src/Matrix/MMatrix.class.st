@@ -129,27 +129,6 @@ MMatrix >> initializeRows: numRows columns: numColumns [
 
 { #category : #private }
 MMatrix >> multiply: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m2_nb_rows with: m2_nb_columns in: res [
-"// This function multiplies mat1[][] and mat2[][], 
-// and stores the result in res[][] 
-
-
-void multiply(double *m1, int m1_nb_rows, int m1_nb_columns, 
-              double *m2, int m2_nb_rows, int m2_nb_columns, 
-              double *res) 
-{ 
-    int col, row, k; 
-    for (col = 0; col < m2_nb_columns; col++) 
-    { 
-        for (row = 0; row < m1_nb_rows; row++) 
-        { 
-				double tmp = 0;
-            for (k = 0; k < m2_nb_rows; k++) 
-					tmp += m1[row * m1_nb_columns + k] * m2[k * m2_nb_columns + col];
-				res[row * m2_nb_columns + col] = tmp;
-        } 
-    } 
-} 
-"
 
 	^ self 
 		ffiCall: #(void multiply(
@@ -284,6 +263,42 @@ MMatrix >> printOn: aStream round: nbDecimals [
 					separatedBy: [ aStream space ]]
 		separatedBy: [ aStream cr ].
 	aStream nextPutAll: ' )'.
+]
+
+{ #category : #private }
+MMatrix >> readme [
+
+"
+
+You need to have the following C function in a file, called mat.c
+
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+void multiply(double *m1, int m1_nb_rows, int m1_nb_columns, 
+              double *m2, int m2_nb_rows, int m2_nb_columns, 
+              double *res) 
+{ 
+    int col, row, k; 
+    for (col = 0; col < m2_nb_columns; col++) 
+    { 
+        for (row = 0; row < m1_nb_rows; row++) 
+        { 
+				double tmp = 0;
+            for (k = 0; k < m2_nb_rows; k++) 
+					tmp += m1[row * m1_nb_columns + k] * m2[k * m2_nb_columns + col];
+				res[row * m2_nb_columns + col] = tmp;
+        } 
+    } 
+} 
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+
+You then need to compile the file using the following instruction, to be performed in a terminal:
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+gcc -dynamiclib -o matrix.dylib mat.c
+-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+This will create a file called matrix.dylib
+"
 ]
 
 { #category : #enumerating }
