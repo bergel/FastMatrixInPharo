@@ -39,6 +39,11 @@ MMatrix >> * aFactor [
 ]
 
 { #category : #arithmetic }
+MMatrix >> + anotherMatrix [
+	^ self add: anotherMatrix 
+]
+
+{ #category : #arithmetic }
 MMatrix >> +* anotherMatrix [
 	^ self multiplyWith: anotherMatrix 
 ]
@@ -55,6 +60,44 @@ MMatrix >> - anotherMatrix [
 	].
 	^ result"
 	^ self substracte: anotherMatrix
+]
+
+{ #category : #'as yet unclassified' }
+MMatrix >> add: anotherMatrix [
+	| result resultArray |
+	nbColumns = anotherMatrix nbColumns ifFalse: [self error: 'dimensions do not conform'].
+	nbRows = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
+	
+	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
+	
+	self assert: [ nbRows * nbColumns = array size ].
+	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
+	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
+	
+	self 
+		add: self array getHandle 
+		with: nbRows 
+		with: nbColumns 
+		with: anotherMatrix array getHandle
+		in: resultArray.
+	
+	result := MMatrix 
+		newHandle: resultArray 
+		rows: nbRows 
+		columns: nbColumns.
+	
+	^ result
+]
+
+{ #category : #private }
+MMatrix >> add: m1 with: nb_rows with: nb_columns with: m2 in: res [
+
+	^ self 
+		ffiCall: #(void add(double *m1, int nb_rows, int nb_columns, 
+              	double *m2, 
+              	double *res)) 
+		module: '/tmp/matrix.dylib'
+
 ]
 
 { #category : #accessing }
@@ -302,6 +345,22 @@ void substracte(double *m1, int nb_rows, int nb_columns,
         { 
 			res[row * nb_columns + col] = 
 				m1[row * nb_columns + col] - m2[row * nb_columns + col];
+        } 
+    } 
+
+}
+
+void add(double *m1, int nb_rows, int nb_columns, 
+              	double *m2, 
+              	double *res)
+{
+   int col, row; 
+    for (col = 0; col < nb_columns; col++) 
+    { 
+        for (row = 0; row < nb_rows; row++) 
+        { 
+			res[row * nb_columns + col] = 
+				m1[row * nb_columns + col] + m2[row * nb_columns + col];
         } 
     } 
 
