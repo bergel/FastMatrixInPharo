@@ -23,12 +23,6 @@ h := 20.
 dout := 5.
 
 r := Random seed: 42.
-"x := Array2D rows: n columns: din tabulate: [ :i :j | r next * 4 -2 ].
-y := Array2D rows: n columns: dout tabulate: [ :i :j | r next * 4 -2 ].
-
-w1 := Array2D rows: din columns: h tabulate: [ :i :j | r next * 4 -2 ].
-w2 := Array2D rows: h columns: dout tabulate: [ :i :j | r next * 4 -2 ].
-"
 
 x := MMatrix newRows: n columns: din.
 x fromContents: ((1 to: n * din) collect: [ :i | r next ]).
