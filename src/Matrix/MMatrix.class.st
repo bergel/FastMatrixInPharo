@@ -171,6 +171,11 @@ MMatrix >> initializeRows: numRows columns: numColumns [
 	array := self newArray
 ]
 
+{ #category : #accessing }
+MMatrix >> max [
+	^ array max
+]
+
 { #category : #private }
 MMatrix >> multiply: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m2_nb_rows with: m2_nb_columns in: res [
 
