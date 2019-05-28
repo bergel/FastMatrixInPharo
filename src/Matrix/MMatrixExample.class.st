@@ -187,3 +187,108 @@ d y: #yourself.
 g add: d.
 g
 ]
+
+{ #category : #examples }
+MMatrixExample >> example03 [
+"
+self new example03 
+
+"
+
+
+| n din h dout r x y w1 w2 learningRate losses hh hrelu ypred loss gradYPred gradW2 gradHRelu gradH gradW1 |
+n := 1.
+din := 2.
+h := 3.
+dout := 2.
+
+r := Random seed: 42.
+
+x := MMatrix newRows: n columns: din.
+x fromContents: ((1 to: n * din) collect: [ :i | r next ]).
+y := MMatrix newRows: n columns: dout.
+y fromContents: ((1 to: n * dout) collect: [ :i | r next ]).
+
+w1 := MMatrix newRows: din columns: h.
+w1 fromContents: ((1 to: din * h) collect: [ :i | r next ]).
+w2 := MMatrix newRows: h columns: dout.
+w2 fromContents: ((1 to: h * dout) collect: [ :i | r next ]).
+
+learningRate := 1e-6.
+
+losses := OrderedCollection new.
+
+ 
+	hh := x +* w1.
+	hrelu := hh collect: [ :v | v max: 0 ].
+	ypred := hrelu +* w2.
+	
+	"Compute and print loss"
+	loss := ((ypred - y) collect: [:vv | vv * vv ]) sum.
+	losses add: loss.
+	
+	"Backprop to compute gradients of w2 and w2 with respect to loss"
+	gradYPred := (ypred - y) * 2.0.
+	gradW2 := hrelu transposed +* gradYPred.
+	gradHRelu := gradYPred +* w2 transposed.
+	gradH := gradHRelu collect: [ :v | v max: 0 ].
+	gradW1 := x transposed +* gradH.
+	
+	w1 := w1 - (gradW1 * learningRate).
+	w2 := w2 - (gradW2 * learningRate) 
+
+
+]
+
+{ #category : #examples }
+MMatrixExample >> example04WithSigmoid [
+"
+self new example03 
+
+"
+
+
+| n din h dout r x y w1 w2 learningRate losses hh hrelu ypred loss gradYPred gradW2 gradHRelu gradH gradW1 |
+n := 1.
+din := 2.
+h := 3.
+dout := 2.
+
+r := Random seed: 42.
+
+x := MMatrix newRows: n columns: din.
+x fromContents: ((1 to: n * din) collect: [ :i | r next ]).
+y := MMatrix newRows: n columns: dout.
+y fromContents: ((1 to: n * dout) collect: [ :i | r next ]).
+
+w1 := MMatrix newRows: din columns: h.
+w1 fromContents: ((1 to: din * h) collect: [ :i | r next ]).
+w2 := MMatrix newRows: h columns: dout.
+w2 fromContents: ((1 to: h * dout) collect: [ :i | r next ]).
+
+learningRate := 0.1.
+
+losses := OrderedCollection new.
+
+ 1500 timesRepeat: [ 
+	hh := x +* w1.
+	hrelu := hh collect: [ :v | 1 / (1 + (v negated exp)) ].
+	ypred := hrelu +* w2.
+	
+	"Compute and print loss"
+	loss := ((ypred - y) collect: [:vv | vv * vv ]) sum.
+	losses add: loss.
+	
+	"Backprop to compute gradients of w2 and w2 with respect to loss"
+	gradYPred := (ypred - y) * 2.0.
+	gradW2 := hrelu transposed +* gradYPred.
+	gradHRelu := gradYPred +* w2 transposed.
+	gradH := gradHRelu collect: [ :v | v * (1 - v) ].
+	gradW1 := x transposed +* gradH.
+	
+	w1 := w1 - (gradW1 * learningRate).
+	w2 := w2 - (gradW2 * learningRate) 
+].
+losses
+
+]

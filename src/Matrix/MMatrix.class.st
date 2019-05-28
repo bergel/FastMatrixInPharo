@@ -120,6 +120,11 @@ MMatrix >> at: aPoint put: value [
 	array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1 put: value asFloat
 ]
 
+{ #category : #accessing }
+MMatrix >> atIndex: index [
+	^ array at: index
+]
+
 { #category : #printing }
 MMatrix >> atRow: rowNumber [
 	(rowNumber between: 1 and: rowNumber)
