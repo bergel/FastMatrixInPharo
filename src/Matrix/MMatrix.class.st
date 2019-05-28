@@ -16,6 +16,18 @@ MMatrix class >> new [
 ]
 
 { #category : #'instance creation' }
+MMatrix class >> newFromVector: vector [
+	"
+	MMatrix newFromVector: #(1 2 3)
+	"
+	^ self basicNew
+		initializeRows: vector size columns: 1;
+		fromContents: vector;
+		yourself
+			
+]
+
+{ #category : #'instance creation' }
 MMatrix class >> newHandle: aHandle rows: numRows columns: numColumns [
 
 	^ self basicNew
@@ -40,12 +52,39 @@ MMatrix >> * aFactor [
 
 { #category : #arithmetic }
 MMatrix >> + anotherMatrix [
-	^ self add: anotherMatrix 
+	| m |
+	((nbRows = anotherMatrix nbRows) and: [ nbColumns = anotherMatrix nbColumns ])
+		ifTrue: [ ^ self add: anotherMatrix ].
+		
+	anotherMatrix nbColumns ~= 1 ifTrue: [ self error: 'not a n * 1 vector' ].
+	m := anotherMatrix stretchToColumns: nbColumns.
+	^ self + m
 ]
 
 { #category : #arithmetic }
 MMatrix >> +* anotherMatrix [
 	^ self multiplyWith: anotherMatrix 
+]
+
+{ #category : #arithmetic }
+MMatrix >> ++ aVector [
+
+	| result |
+	result := MMatrix newRows: nbRows columns: nbColumns.
+	1 to: nbRows do: [ :y |
+		1 to: nbColumns do: [ :x |
+			result at: x @ y put: ((self at: x @ y) - (aVector at: x @ 1))
+		] 
+	].
+	^ result
+	
+"	| resultArray result |
+	resultArray := ByteArray new: (nbRows * nbColumns * 8).
+	result := MMatrix 
+		newHandle: resultArray 
+		rows: nbRows 
+		columns: nbColumns.
+	^ result"
 ]
 
 { #category : #'as yet unclassified' }
@@ -60,6 +99,11 @@ MMatrix >> - anotherMatrix [
 	].
 	^ result"
 	^ self substracte: anotherMatrix
+]
+
+{ #category : #arithmetic }
+MMatrix >> / value [
+	^ self collect: [ :v | v / 4 ]
 ]
 
 { #category : #'as yet unclassified' }
@@ -198,6 +242,22 @@ MMatrix >> multiply: array1 with: m1_nb_rows with: m1_nb_columns with: array2 wi
 ]
 
 { #category : #accessing }
+MMatrix >> multiplyPerElement: mat [
+	"
+	| v1 v2 |
+	v1 := MMatrix newFromVector: #(1 2 3).
+	v2 := MMatrix newFromVector: #(10 20 30).
+	v1 multiplyPerElement: v2	
+	"
+	| r |
+	self assert: [ nbRows = mat nbRows ].
+	self assert: [ nbColumns = mat nbColumns ].
+	r := MMatrix newRows: nbRows columns: nbColumns.
+	r fromContents: (self array asArray with: mat array asArray collect: [ :a :b | a * b ]).
+	^ r
+]
+
+{ #category : #accessing }
 MMatrix >> multiplyWith: anotherMatrix [
 	| result resultArray |
 	nbColumns = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
@@ -319,6 +379,17 @@ MMatrix >> printOn: aStream round: nbDecimals [
 	aStream nextPutAll: ' )'.
 ]
 
+{ #category : #accessing }
+MMatrix >> random [
+	^ self random: Random new
+]
+
+{ #category : #accessing }
+MMatrix >> random: random [
+	self fromContents: ((1 to: nbRows * nbColumns) collect: [ :vv | random next ])
+	"array := array collect: [ :v | random next ]"
+]
+
 { #category : #private }
 MMatrix >> readme [
 
@@ -387,6 +458,25 @@ This will create a file called matrix.dylib
 "
 ]
 
+{ #category : #arithmetic }
+MMatrix >> stretchToColumns: nbOfColumns [
+	"
+	| x |
+	x := MMatrix newFromVector: #(1 2 3 4).
+	x stretchToColumns: 5.
+	"
+	| content result |
+	content := OrderedCollection new.
+	1 to: nbRows do: [ :row |
+		1 to: nbOfColumns do: [ :columns |
+			content add: (self at: 1 @ row)
+		]
+	].
+	result := MMatrix newRows: nbRows columns: nbOfColumns.
+	result fromContents: content.
+	^ result
+]
+
 { #category : #'as yet unclassified' }
 MMatrix >> substracte: anotherMatrix [
 	| result resultArray |
@@ -438,10 +528,77 @@ MMatrix >> sum [
 	^ sum
 ]
 
+{ #category : #enumerating }
+MMatrix >> sumKeepDimension [
+	"Vertical summing
+	| x |
+	x := MMatrix newRows: 3 columns: 2.
+	x fromContents: (1 to: 6).
+	x sumKeepDimension
+	"
+	| result sum |
+	result := MMatrix newRows: nbRows columns: 1.
+	1 to: nbRows do: [ :y |
+		sum := 0.
+		1 to: nbColumns do: [ :x |
+			sum := sum + (self at: x @ y)
+		].
+		result at: 1 @ y put: sum
+	].
+	^ result
+]
+
 { #category : #private }
 MMatrix >> transposed [
+
+	"
+	| m |
+	m := MMatrix newRows: 2 columns: 4.
+	m fromContents: (1 to: 8).
+	m transposed
+	
+	"
+
+
+	"
+	From https://rosettacode.org/wiki/Matrix_transposition#C
+	
+void transpose(void *dest, void *src, int src_h, int src_w)
+{
+	int i, j;
+	double (*d)[src_h] = dest, (*s)[src_w] = src;
+	for (i = 0; i < src_h; i++)
+		for (j = 0; j < src_w; j++)
+			d[j][i] = s[i][j];
+}
+"
+"import java.util.Arrays;
+public class Transpose{
+       public static void main(String[] args){
+               double[][] m = {{1, 1, 1, 1},
+                               {2, 4, 8, 16},
+                               {3, 9, 27, 81},
+                               {4, 16, 64, 256},
+                               {5, 25, 125, 625}};
+               double[][] ans = new double[m[0].length][m.length];
+               for(int rows = 0; rows < m.length; rows++){
+                       for(int cols = 0; cols < m[0].length; cols++){
+                               ans[cols][rows] = m[rows][cols];
+                       }
+               }
+               for(double[] i:ans){//2D arrays are arrays of arrays
+                       System.out.println(Arrays.toString(i));
+               }
+       }
+}
+"
+
 	| result |
 	result := MMatrix newRows: nbColumns columns: nbRows.
-	result fromContents: array copy.
+	1 to: nbRows do: [ :row |
+		1 to: nbColumns do: [ :column |
+			result at: row @ column put: (self at: column @ row)
+		]
+	].
 	^ result
 ]
