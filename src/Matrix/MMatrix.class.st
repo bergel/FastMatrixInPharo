@@ -155,6 +155,11 @@ MMatrix >> array: anArray [
 ]
 
 { #category : #accessing }
+MMatrix >> asArray [
+	^ array asArray
+]
+
+{ #category : #accessing }
 MMatrix >> at: aPoint [
 	^ array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1
 ]
