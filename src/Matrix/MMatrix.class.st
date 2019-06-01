@@ -60,28 +60,32 @@ MMatrix class >> newRows: numRows columns: numColumns [
 
 { #category : #arithmetic }
 MMatrix >> * aFactor [
+	"Multiply each element of the matrix by a factor"
 	^ self collect: [ :v | v * aFactor ]
 ]
 
 { #category : #arithmetic }
-MMatrix >> + anotherMatrix [
+MMatrix >> + matrixOrVector [
+	"Add either a matrix or a vector. The argument could either be a matrix of the same size than me, or a vector
+	A new matrix is returned as result"
 	| m |
-	((nbRows = anotherMatrix nbRows) and: [ nbColumns = anotherMatrix nbColumns ])
-		ifTrue: [ ^ self add: anotherMatrix ].
+	((nbRows = matrixOrVector nbRows) and: [ nbColumns = matrixOrVector nbColumns ])
+		ifTrue: [ ^ self add: matrixOrVector ].
 		
-	anotherMatrix nbColumns ~= 1 ifTrue: [ self error: 'not a n * 1 vector' ].
-	m := anotherMatrix stretchToColumns: nbColumns.
+	matrixOrVector nbColumns ~= 1 ifTrue: [ self error: 'not a n * 1 vector' ].
+	m := matrixOrVector stretchToColumns: nbColumns.
 	^ self + m
 ]
 
 { #category : #arithmetic }
 MMatrix >> +* anotherMatrix [
-	^ self multiplyWith: anotherMatrix 
+	"Shortcut for the dot operator between matrices"
+	^ self dot: anotherMatrix 
 ]
 
 { #category : #arithmetic }
 MMatrix >> ++ aVector [
-
+	"NOT USED"
 	| result |
 	result := MMatrix newRows: nbRows columns: nbColumns.
 	1 to: nbRows do: [ :y |
@@ -100,8 +104,11 @@ MMatrix >> ++ aVector [
 	^ result"
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #arithmetic }
 MMatrix >> - anotherMatrix [
+	"Substract a matrix from the receiver matrix"
+	^ self sub: anotherMatrix
+	
 	"PHARO VERSION"
 	"| result |
 	result := MMatrix newRows: nbRows columns: nbColumns.
@@ -111,31 +118,32 @@ MMatrix >> - anotherMatrix [
 		] 
 	].
 	^ result"
-	^ self substracte: anotherMatrix
 ]
 
 { #category : #arithmetic }
 MMatrix >> / value [
-	^ self collect: [ :v | v / 4 ]
+	"Divide each element of the matrix by a value"
+	^ self collect: [ :v | v / value ]
 ]
 
-{ #category : #'as yet unclassified' }
-MMatrix >> add: anotherMatrix [
+{ #category : #arithmetic }
+MMatrix >> add: aMatrix [
+	"Add two matrices, the receiver and the argument, and produces a new matrix"
 	| result resultArray |
-	nbColumns = anotherMatrix nbColumns ifFalse: [self error: 'dimensions do not conform'].
-	nbRows = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
+	nbColumns = aMatrix nbColumns ifFalse: [self error: 'dimensions do not conform'].
+	nbRows = aMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
 	
-	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
+	resultArray := ByteArray new: (nbRows * aMatrix nbColumns * 8).
 	
 	self assert: [ nbRows * nbColumns = array size ].
-	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
-	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
+	self assert: [ aMatrix nbRows * aMatrix nbColumns = aMatrix array size ].
+	self assert: [ nbRows * aMatrix nbColumns * 8 = resultArray size ].
 	
 	self 
 		add: self array getHandle 
 		with: nbRows 
 		with: nbColumns 
-		with: anotherMatrix array getHandle
+		with: aMatrix array getHandle
 		in: resultArray.
 	
 	result := MMatrix 
@@ -162,11 +170,6 @@ MMatrix >> array [
 	^ array
 ]
 
-{ #category : #'as yet unclassified' }
-MMatrix >> array: anArray [
-	array := anArray 
-]
-
 { #category : #accessing }
 MMatrix >> asArray [
 	^ array asArray
@@ -174,17 +177,14 @@ MMatrix >> asArray [
 
 { #category : #accessing }
 MMatrix >> at: aPoint [
+	"Access an element of the matrix"
 	^ array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1
 ]
 
 { #category : #accessing }
-MMatrix >> at: aPoint put: value [
-	array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1 put: value asFloat
-]
-
-{ #category : #accessing }
-MMatrix >> atIndex: index [
-	^ array at: index
+MMatrix >> at: aPoint put: aNumber [
+	"Modify an element of the matrix"
+	array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1 put: aNumber asFloat
 ]
 
 { #category : #printing }
@@ -228,6 +228,7 @@ int main()
 
 { #category : #enumerating }
 MMatrix >> collect: aOneArgBlock [
+	"Return a new matrix, for which each matrix element is transformed."
 	| result |
 	result := MMatrix newRows: nbRows columns: nbColumns.
 	1 to: nbRows do: [ :y |
@@ -238,15 +239,77 @@ MMatrix >> collect: aOneArgBlock [
 	^ result
 ]
 
-{ #category : #'as yet unclassified' }
+{ #category : #initialization }
 MMatrix >> createArray [
+	array := (FFIExternalArray newType: 'double' size: nbColumns * nbRows)
+]
 
-	self array: (FFIExternalArray newType: 'double' size: nbColumns * nbRows)
+{ #category : #accessing }
+MMatrix >> dot: anotherMatrix [
+	| result resultArray |
+	nbColumns = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
+	
+	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
+	
+	self assert: [ nbRows * nbColumns = array size ].
+	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
+	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
+	
+	"COMPUTATION WITHIN PHARO"
+	"resultArray := FloatArray new: (nbRows * anotherMatrix nbColumns)."
+	"-----"
+	"
+	self 
+		pharoMultiply: self array asFloatArray 
+		with: nbRows 
+		with: nbColumns 
+		with: anotherMatrix array asFloatArray
+		with: anotherMatrix nbRows 
+		with: anotherMatrix nbColumns 
+		in: resultArray.
+	"
+	self 
+		dot: self array getHandle 
+		with: nbRows 
+		with: nbColumns 
+		with: anotherMatrix array getHandle
+		with: anotherMatrix nbRows 
+		with: anotherMatrix nbColumns 
+		in: resultArray.
+	
+	
+	"COMPUTATION WITHIN PHARO"
+	"result := MMatrix 
+		newRows: nbRows 
+		columns: anotherMatrix nbColumns.
+	result fromContents: resultArray."
+	"-----"
+	result := MMatrix 
+		newHandle: resultArray 
+		rows: nbRows 
+		columns: anotherMatrix nbColumns.
+	
+	^ result
+]
+
+{ #category : #private }
+MMatrix >> dot: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m2_nb_rows with: m2_nb_columns in: res [
+
+	^ self 
+		ffiCall: #(void dot(
+			void *array1, 
+			int m1_nb_rows, 
+			int m1_nb_columns, 
+         void *array2, 
+			int m2_nb_rows, 
+			int m2_nb_columns, 
+			void *res) ) 
+		module: '/tmp/matrix.dylib'
+
 ]
 
 { #category : #accessing }
 MMatrix >> fromContents: content [
-
 	self assert: [ content size = (nbColumns * nbRows) ] description: 'size mismatch'.
 	content doWithIndex: [ :v :i | array at: i put: v ]
 ]
@@ -274,22 +337,6 @@ MMatrix >> max [
 	^ array max
 ]
 
-{ #category : #private }
-MMatrix >> multiply: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m2_nb_rows with: m2_nb_columns in: res [
-
-	^ self 
-		ffiCall: #(void multiply(
-			void *array1, 
-			int m1_nb_rows, 
-			int m1_nb_columns, 
-         void *array2, 
-			int m2_nb_rows, 
-			int m2_nb_columns, 
-			void *res) ) 
-		module: '/tmp/matrix.dylib'
-
-]
-
 { #category : #accessing }
 MMatrix >> multiplyPerElement: mat [
 	"
@@ -304,54 +351,6 @@ MMatrix >> multiplyPerElement: mat [
 	r := MMatrix newRows: nbRows columns: nbColumns.
 	r fromContents: (self array asArray with: mat array asArray collect: [ :a :b | a * b ]).
 	^ r
-]
-
-{ #category : #accessing }
-MMatrix >> multiplyWith: anotherMatrix [
-	| result resultArray |
-	nbColumns = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
-	
-	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
-	
-	self assert: [ nbRows * nbColumns = array size ].
-	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
-	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
-	
-	"COMPUTATION WITHIN PHARO"
-	"resultArray := FloatArray new: (nbRows * anotherMatrix nbColumns)."
-	"-----"
-	"
-	self 
-		pharoMultiply: self array asFloatArray 
-		with: nbRows 
-		with: nbColumns 
-		with: anotherMatrix array asFloatArray
-		with: anotherMatrix nbRows 
-		with: anotherMatrix nbColumns 
-		in: resultArray.
-	"
-	self 
-		multiply: self array getHandle 
-		with: nbRows 
-		with: nbColumns 
-		with: anotherMatrix array getHandle
-		with: anotherMatrix nbRows 
-		with: anotherMatrix nbColumns 
-		in: resultArray.
-	
-	
-	"COMPUTATION WITHIN PHARO"
-	"result := MMatrix 
-		newRows: nbRows 
-		columns: anotherMatrix nbColumns.
-	result fromContents: resultArray."
-	"-----"
-	result := MMatrix 
-		newHandle: resultArray 
-		rows: nbRows 
-		columns: anotherMatrix nbColumns.
-	
-	^ result
 ]
 
 { #category : #accessing }
@@ -417,7 +416,7 @@ MMatrix >> printOn: aStream [
 
 { #category : #printing }
 MMatrix >> printOn: aStream round: nbDecimals [
-
+	"Print the receiver matrix into a stream. All numerical value are truncated to a fixed number of decimals"
 	aStream nextPutAll: '('.
 	(1 to: nbRows) 
 		do: [ :r | 
@@ -443,64 +442,44 @@ MMatrix >> random: random [
 MMatrix >> readme [
 
 "
-
 You need to have the following C function in a file, called mat.c
 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-void multiply(double *m1, int m1_nb_rows, int m1_nb_columns, 
+void dot(double *m1, int m1_nb_rows, int m1_nb_columns, 
               double *m2, int m2_nb_rows, int m2_nb_columns, 
-              double *res) 
-{ 
+              double *res) { 
     int col, row, k; 
-    for (col = 0; col < m2_nb_columns; col++) 
-    { 
-        for (row = 0; row < m1_nb_rows; row++) 
-        { 
-				double tmp = 0;
+    for (col = 0; col < m2_nb_columns; col++) { 
+        for (row = 0; row < m1_nb_rows; row++) { 
+				  double tmp = 0;
             for (k = 0; k < m2_nb_rows; k++) 
-					tmp += m1[row * m1_nb_columns + k] * m2[k * m2_nb_columns + col];
-				res[row * m2_nb_columns + col] = tmp;
-        } 
-    } 
-} 
+					   tmp += m1[row * m1_nb_columns + k] * m2[k * m2_nb_columns + col];
+				  res[row * m2_nb_columns + col] = tmp;
+} } } 
 
-void substracte(double *m1, int nb_rows, int nb_columns, 
-              	double *m2, 
-              	double *res)
-{
+void sub(double *m1, int nb_rows, int nb_columns, 
+              	double *m2, double *res) {
    int col, row; 
-    for (col = 0; col < nb_columns; col++) 
-    { 
-        for (row = 0; row < nb_rows; row++) 
-        { 
-			res[row * nb_columns + col] = 
-				m1[row * nb_columns + col] - m2[row * nb_columns + col];
-        } 
-    } 
-
-}
+    for (col = 0; col < nb_columns; col++) { 
+        for (row = 0; row < nb_rows; row++) { 
+			   res[row * nb_columns + col] = 
+				  m1[row * nb_columns + col] - m2[row * nb_columns + col];
+} } } 
 
 void add(double *m1, int nb_rows, int nb_columns, 
-              	double *m2, 
-              	double *res)
-{
+              	double *m2, double *res) {
    int col, row; 
-    for (col = 0; col < nb_columns; col++) 
-    { 
-        for (row = 0; row < nb_rows; row++) 
-        { 
-			res[row * nb_columns + col] = 
-				m1[row * nb_columns + col] + m2[row * nb_columns + col];
-        } 
-    } 
-
-}
+    for (col = 0; col < nb_columns; col++) { 
+        for (row = 0; row < nb_rows; row++) { 
+			   res[row * nb_columns + col] = 
+				  m1[row * nb_columns + col] + m2[row * nb_columns + col];
+} } } 
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 
 You then need to compile the file using the following instruction, to be performed in a terminal:
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-gcc -dynamiclib -o matrix.dylib mat.c
+gcc -dynamiclib -o matrix.dylib matrix.c
 -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 This will create a file called matrix.dylib
@@ -526,8 +505,8 @@ MMatrix >> stretchToColumns: nbOfColumns [
 	^ result
 ]
 
-{ #category : #'as yet unclassified' }
-MMatrix >> substracte: anotherMatrix [
+{ #category : #arithmetic }
+MMatrix >> sub: anotherMatrix [
 	| result resultArray |
 	nbColumns = anotherMatrix nbColumns ifFalse: [self error: 'dimensions do not conform'].
 	nbRows = anotherMatrix nbRows ifFalse: [self error: 'dimensions do not conform'].
@@ -539,7 +518,7 @@ MMatrix >> substracte: anotherMatrix [
 	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
 	
 	self 
-		substracte: self array getHandle 
+		sub: self array getHandle 
 		with: nbRows 
 		with: nbColumns 
 		with: anotherMatrix array getHandle
@@ -554,10 +533,10 @@ MMatrix >> substracte: anotherMatrix [
 ]
 
 { #category : #private }
-MMatrix >> substracte: m1 with: nb_rows with: nb_columns with: m2 in: res [
+MMatrix >> sub: m1 with: nb_rows with: nb_columns with: m2 in: res [
 
 	^ self 
-		ffiCall: #(void substracte(double *m1, int nb_rows, int nb_columns, 
+		ffiCall: #(void sub(double *m1, int nb_rows, int nb_columns, 
               	double *m2, 
               	double *res)) 
 		module: '/tmp/matrix.dylib'
