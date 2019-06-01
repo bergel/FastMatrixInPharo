@@ -16,6 +16,19 @@ MMatrix class >> new [
 ]
 
 { #category : #'instance creation' }
+MMatrix class >> newFromArrays: arrays [
+	"
+	MMatrix newFromArrays: #(#(1 2 3) #(4 5 6))
+	MMatrix newFromArrays: #(#(1 2 3))
+	"
+	^ self basicNew
+		initializeRows: arrays size columns: arrays first size;
+		fromContents: (arrays flatCollect: #yourself);
+		yourself
+			
+]
+
+{ #category : #'instance creation' }
 MMatrix class >> newFromVector: vector [
 	"
 	MMatrix newFromVector: #(1 2 3)
