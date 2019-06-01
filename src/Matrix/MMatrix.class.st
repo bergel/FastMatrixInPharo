@@ -42,7 +42,7 @@ MMatrix class >> newFromVector: vector [
 
 { #category : #'instance creation' }
 MMatrix class >> newHandle: aHandle rows: numRows columns: numColumns [
-
+	"Create a matrix with a provided content. Useful when creating a matrix after an FFI operation"
 	^ self basicNew
 		initializeHandle: aHandle rows: numRows columns: numColumns;
 		yourself
@@ -176,6 +176,13 @@ MMatrix >> asArray [
 ]
 
 { #category : #accessing }
+MMatrix >> asStructuredArray [
+	"Return a structured array that describe the matrix"
+	^ (1 to: nbRows) collect: [ :i | self atRow: i ] as: Array
+
+]
+
+{ #category : #accessing }
 MMatrix >> at: aPoint [
 	"Access an element of the matrix"
 	^ array at: ((aPoint y - 1) * nbColumns + (aPoint x - 1)) + 1
@@ -189,6 +196,7 @@ MMatrix >> at: aPoint put: aNumber [
 
 { #category : #printing }
 MMatrix >> atRow: rowNumber [
+	"Return a particular row"
 	(rowNumber between: 1 and: rowNumber)
 		ifFalse: [ self error: '1st subscript out of range' ].
 	^ (1 to: nbColumns) collect: [ :x | self at: x @ rowNumber ] 
@@ -237,11 +245,6 @@ MMatrix >> collect: aOneArgBlock [
 		] 
 	].
 	^ result
-]
-
-{ #category : #initialization }
-MMatrix >> createArray [
-	array := (FFIExternalArray newType: 'double' size: nbColumns * nbRows)
 ]
 
 { #category : #accessing }
@@ -310,6 +313,7 @@ MMatrix >> dot: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m
 
 { #category : #accessing }
 MMatrix >> fromContents: content [
+	"Initialize the matrix with a linear content"
 	self assert: [ content size = (nbColumns * nbRows) ] description: 'size mismatch'.
 	content doWithIndex: [ :v :i | array at: i put: v ]
 ]
@@ -318,17 +322,16 @@ MMatrix >> fromContents: content [
 MMatrix >> initializeHandle: aHandle rows: numRows columns: numColumns [
 
 	self initialize.
-	self nbRows: numRows.
-	self nbColumns: numColumns.
+	nbRows := numRows.
+	nbColumns := numColumns.
 	array := self newArrayFromHandle: aHandle
 ]
 
 { #category : #initialization }
 MMatrix >> initializeRows: numRows columns: numColumns [
-
 	self initialize.
-	self nbRows: numRows.
-	self nbColumns: numColumns.
+	nbRows := numRows.
+	nbColumns := numColumns.
 	array := self newArray
 ]
 
@@ -355,27 +358,19 @@ MMatrix >> multiplyPerElement: mat [
 
 { #category : #accessing }
 MMatrix >> nbColumns [
+	"Number of columns defined in the matrix"
 	^ nbColumns
-]
-
-{ #category : #private }
-MMatrix >> nbColumns: anInt [
-	nbColumns := anInt
 ]
 
 { #category : #accessing }
 MMatrix >> nbRows [
+	"Number of rows defined in the matrix"
 	^ nbRows
 ]
 
 { #category : #private }
-MMatrix >> nbRows: anInt [
-	nbRows := anInt
-]
-
-{ #category : #private }
 MMatrix >> newArray [
-
+	"Create an array used to contains the store the matrix content"
 	^ FFIExternalArray 
 		newType: 'double' 
 		size: nbColumns * nbRows
@@ -410,7 +405,7 @@ MMatrix >> pharoMultiply: m1 with: m1_nb_rows with: m1_nb_columns with: m2 with:
 
 { #category : #printing }
 MMatrix >> printOn: aStream [
-
+	"Print the matrix in the stream, with 4 decimal for each value"
 	self printOn: aStream round: 4
 ]
 

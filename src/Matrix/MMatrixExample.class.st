@@ -118,12 +118,12 @@ losses := OrderedCollection new.
 	w2 := w2 - (gradW2 * learningRate) 
 ].
 
-g := RTGrapher new.
+"g := RTGrapher new.
 d := RTData new.
 d points: losses.
 d y: #yourself.
 g add: d.
-g
+g"
 ]
 
 { #category : #examples }
@@ -180,12 +180,12 @@ losses := OrderedCollection new.
 	w2 := w2 - (learningRate * gradW2).
 ].
 
-g := RTGrapher new.
+"g := RTGrapher new.
 d := RTData new.
 d points: losses.
 d y: #yourself.
 g add: d.
-g
+g"
 ]
 
 { #category : #examples }
