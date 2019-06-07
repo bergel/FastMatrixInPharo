@@ -424,13 +424,15 @@ MMatrix >> printOn: aStream round: nbDecimals [
 
 { #category : #accessing }
 MMatrix >> random [
+	"Fill the matrix with random numbers"
 	^ self random: Random new
 ]
 
 { #category : #accessing }
-MMatrix >> random: random [
-	self fromContents: ((1 to: nbRows * nbColumns) collect: [ :vv | random next ])
-	"array := array collect: [ :v | random next ]"
+MMatrix >> random: randomNumberGenerator [
+	"Fill the matrix with random numbers. Takes a random number generator as argument"
+	self fromContents: ((1 to: nbRows * nbColumns) collect: [ :vv | randomNumberGenerator next ])
+
 ]
 
 { #category : #private }
@@ -534,15 +536,15 @@ MMatrix >> sub: m1 with: nb_rows with: nb_columns with: m2 in: res [
 		ffiCall: #(void sub(double *m1, int nb_rows, int nb_columns, 
               	double *m2, 
               	double *res)) 
-		module: '/tmp/matrix.dylib'
+		module: 'matrix.dylib'
 
 ]
 
 { #category : #enumerating }
 MMatrix >> sum [
-	| result sum |
+	"Return the sum of the matrix values"
+	| sum |
 	sum := 0.
-	result := MMatrix newRows: nbRows columns: nbColumns.
 	1 to: nbRows do: [ :y |
 		1 to: nbColumns do: [ :x |
 			sum := sum + (self at: x @ y)
@@ -573,7 +575,16 @@ MMatrix >> sumKeepDimension [
 
 { #category : #private }
 MMatrix >> transposed [
-
+	"Transpose the matrix"
+	| result |
+	result := MMatrix newRows: nbColumns columns: nbRows.
+	1 to: nbRows do: [ :row |
+		1 to: nbColumns do: [ :column |
+			result at: row @ column put: (self at: column @ row)
+		]
+	].
+	^ result
+	
 	"
 	| m |
 	m := MMatrix newRows: 2 columns: 4.
@@ -616,12 +627,5 @@ public class Transpose{
 }
 "
 
-	| result |
-	result := MMatrix newRows: nbColumns columns: nbRows.
-	1 to: nbRows do: [ :row |
-		1 to: nbColumns do: [ :column |
-			result at: row @ column put: (self at: column @ row)
-		]
-	].
-	^ result
+
 ]

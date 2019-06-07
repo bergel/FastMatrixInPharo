@@ -20,6 +20,13 @@ MMatrixTest >> testAddition2 [
 ]
 
 { #category : #tests }
+MMatrixTest >> testDivision [
+	| m |
+	m := MMatrix newFromArrays: #(#(1 2 3) #(4 5 6)). 
+	self assert: (m / 2) asStructuredArray equals: #(#(0.5 1.0 1.5) #(2.0 2.5 3.0))
+]
+
+{ #category : #tests }
 MMatrixTest >> testMultiplication [
 	| a m m2 |
 	a := 0.
@@ -48,4 +55,12 @@ MMatrixTest >> testMultiplication [
 				collect: [ :i | 
 					a := a + 1.
 					a ]) asFloatArray
+]
+
+{ #category : #tests }
+MMatrixTest >> testSubstraction [
+	| m1 m2 |
+	m1 := MMatrix newFromArrays: #(#(1 2 3) #(4 5 6)). 
+	m2 := MMatrix newFromArrays: #(#(4 5 6) #(1 2 3)).
+	self assert: (m1 - m2) asStructuredArray equals: #(#(-3.0 -3.0 -3.0) #(3.0 3.0 3.0))
 ]
