@@ -64,3 +64,11 @@ MMatrixTest >> testSubstraction [
 	m2 := MMatrix newFromArrays: #(#(4 5 6) #(1 2 3)).
 	self assert: (m1 - m2) asStructuredArray equals: #(#(-3.0 -3.0 -3.0) #(3.0 3.0 3.0))
 ]
+
+{ #category : #tests }
+MMatrixTest >> testSumKeepDimension [
+	| m expectedResult |
+	m := MMatrix newFromArrays: #(#(1.0 2.0) #(3.0 4.0) #(5.0 6.0 )).
+	expectedResult := MMatrix newFromArrays: #(#(3.0) #(7.0) #(11.0 )).
+	self assert: m sumKeepDimension asStructuredArray equals: expectedResult asStructuredArray
+]
