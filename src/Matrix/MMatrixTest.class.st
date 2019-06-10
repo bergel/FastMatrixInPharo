@@ -44,7 +44,7 @@ MMatrixTest >> testMultiplication [
 				collect: [ :i | 
 					a := a + 1.
 					a ]).
-	self assert: (m +* m2) array asFloatArray equals: #(27 30 33 61 68 75 95 106 117) asFloatArray.
+	self assert: (m +* m2) asStructuredArray equals: #(27 30 33 61 68 75 95 106 117) asFloatArray.
 	
 	a := 0.
 	self assert: m array asFloatArray equals: ((1 to: 6)

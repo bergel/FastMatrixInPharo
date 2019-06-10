@@ -17,15 +17,17 @@ MMatrix class >> new [
 
 { #category : #'instance creation' }
 MMatrix class >> newFromArrays: arrays [
-	"
+	"Create a matrix from an array containing the structured 
+	values of the matrix.
+	Example of matrix creations:
 	MMatrix newFromArrays: #(#(1 2 3) #(4 5 6))
 	MMatrix newFromArrays: #(#(1 2 3))
+	MMatrix newFromArrays: #(#(1) #(2) #(3))
 	"
 	^ self basicNew
 		initializeRows: arrays size columns: arrays first size;
 		fromContents: (arrays flatCollect: #yourself);
 		yourself
-			
 ]
 
 { #category : #'instance creation' }
@@ -136,14 +138,14 @@ MMatrix >> add: aMatrix [
 	resultArray := ByteArray new: (nbRows * aMatrix nbColumns * 8).
 	
 	self assert: [ nbRows * nbColumns = array size ].
-	self assert: [ aMatrix nbRows * aMatrix nbColumns = aMatrix array size ].
+	self assert: [ aMatrix nbRows * aMatrix nbColumns = aMatrix size ].
 	self assert: [ nbRows * aMatrix nbColumns * 8 = resultArray size ].
 	
 	self 
-		add: self array getHandle 
+		add: self getHandle 
 		with: nbRows 
 		with: nbColumns 
-		with: aMatrix array getHandle
+		with: aMatrix getHandle
 		in: resultArray.
 	
 	result := MMatrix 
@@ -161,13 +163,8 @@ MMatrix >> add: m1 with: nb_rows with: nb_columns with: m2 in: res [
 		ffiCall: #(void add(double *m1, int nb_rows, int nb_columns, 
               	double *m2, 
               	double *res)) 
-		module: '/tmp/matrix.dylib'
+		module: 'matrix.dylib'
 
-]
-
-{ #category : #accessing }
-MMatrix >> array [
-	^ array
 ]
 
 { #category : #accessing }
@@ -255,7 +252,7 @@ MMatrix >> dot: anotherMatrix [
 	resultArray := ByteArray new: (nbRows * anotherMatrix nbColumns * 8).
 	
 	self assert: [ nbRows * nbColumns = array size ].
-	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix array size ].
+	self assert: [ anotherMatrix nbRows * anotherMatrix nbColumns = anotherMatrix size ].
 	self assert: [ nbRows * anotherMatrix nbColumns * 8 = resultArray size ].
 	
 	"COMPUTATION WITHIN PHARO"
@@ -272,10 +269,10 @@ MMatrix >> dot: anotherMatrix [
 		in: resultArray.
 	"
 	self 
-		dot: self array getHandle 
+		dot: self getHandle 
 		with: nbRows 
 		with: nbColumns 
-		with: anotherMatrix array getHandle
+		with: anotherMatrix getHandle
 		with: anotherMatrix nbRows 
 		with: anotherMatrix nbColumns 
 		in: resultArray.
@@ -307,7 +304,7 @@ MMatrix >> dot: array1 with: m1_nb_rows with: m1_nb_columns with: array2 with: m
 			int m2_nb_rows, 
 			int m2_nb_columns, 
 			void *res) ) 
-		module: '/tmp/matrix.dylib'
+		module: 'matrix.dylib'
 
 ]
 
@@ -316,6 +313,12 @@ MMatrix >> fromContents: content [
 	"Initialize the matrix with a linear content"
 	self assert: [ content size = (nbColumns * nbRows) ] description: 'size mismatch'.
 	content doWithIndex: [ :v :i | array at: i put: v ]
+]
+
+{ #category : #enumerating }
+MMatrix >> getHandle [
+	"Return the handle of the foreign object. This allows to be accessed from C"
+	^ array getHandle
 ]
 
 { #category : #initialization }
@@ -481,6 +484,12 @@ gcc -dynamiclib -o matrix.dylib matrix.c
 
 This will create a file called matrix.dylib
 "
+]
+
+{ #category : #accessing }
+MMatrix >> size [
+	"Return the number of values contained in the matrix"
+	^ nbColumns * nbRows 
 ]
 
 { #category : #arithmetic }
